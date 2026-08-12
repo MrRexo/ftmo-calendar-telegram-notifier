@@ -1,0 +1,22 @@
+[Unit]
+Description=FTMO economic calendar Telegram notifier
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ftmo-notifier
+Group=ftmo-notifier
+WorkingDirectory=/opt/ftmo-calendar-telegram-notifier
+EnvironmentFile=/etc/ftmo-calendar-notifier.env
+ExecStart=/opt/ftmo-calendar-telegram-notifier/.venv/bin/python -m ftmo_bot
+Restart=always
+RestartSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ftmo-calendar-notifier
+
+[Install]
+WantedBy=multi-user.target
