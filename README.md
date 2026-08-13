@@ -3,6 +3,7 @@
 Lekka usługa w Pythonie, która pobiera kalendarz ekonomiczny FTMO i wysyła na Telegram:
 
 - codzienne podsumowanie wydarzeń P0/P1/P2,
+- specjalne przypomnienie każdego 13. dnia miesiąca: `Dziś 13! Nie graj niczego 🙂`,
 - przypomnienia 15 i 5 minut przed wydarzeniami z obostrzeniami FTMO,
 - wynik `actual` oraz godzinę zakończenia obostrzenia po publikacji.
 

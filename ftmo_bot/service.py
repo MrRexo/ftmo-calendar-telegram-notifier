@@ -63,7 +63,14 @@ class FtmoNotifierService:
 
         if self._summary_is_due(local_now):
             key = f"summary:{local_now.date().isoformat()}"
-            self.telegram.send(format_daily_summary(today_events, self.settings.timezone, self.settings.summary_impacts))
+            self.telegram.send(
+                format_daily_summary(
+                    today_events,
+                    self.settings.timezone,
+                    self.settings.summary_impacts,
+                    summary_day=local_now.date(),
+                )
+            )
             self.state.mark_sent(key, local_now.isoformat(timespec="seconds"))
             logger.info("Daily summary sent for %s", local_now.date())
 

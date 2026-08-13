@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import date, timedelta
 from zoneinfo import ZoneInfo
 
 from ftmo_bot.models import EconomicEvent, PRIORITY_ORDER
@@ -19,15 +19,26 @@ def format_daily_summary(
     events: list[EconomicEvent],
     timezone: ZoneInfo,
     allowed_impacts: frozenset[str],
+    summary_day: date | None = None,
 ) -> str:
+    day_value = summary_day or (
+        events[0].date.astimezone(timezone).date() if events else date.today()
+    )
+    special_notice = "🛑 Dziś 13! Nie graj niczego 🙂" if day_value.day == 13 else None
+
     if not events:
-        return "📅 FTMO — dzisiaj nie ma wydarzeń w kalendarzu."
+        lines = ["📅 FTMO — dzisiaj nie ma wydarzeń w kalendarzu."]
+        if special_notice:
+            lines.extend(["", special_notice])
+        return "\n".join(lines)
 
     local_events = sorted(events, key=lambda event: (PRIORITY_ORDER[event.priority], event.date))
     selected = [event for event in local_events if event.restriction or event.impact in allowed_impacts]
     omitted = len(events) - len(selected)
     day = events[0].date.astimezone(timezone).strftime("%A, %d.%m.%Y")
     lines = [f"📅 FTMO — {day}", ""]
+    if special_notice:
+        lines.extend([special_notice, ""])
 
     if not selected:
         lines.append("Brak wydarzeń o wybranym poziomie ważności.")
