@@ -85,6 +85,7 @@ class FtmoNotifierService:
                     self.settings.timezone,
                     self.settings.summary_impacts,
                     summary_day=local_now.date(),
+                    language=self.settings.message_language,
                 )
             )
             self.state.mark_sent(key, local_now.isoformat(timespec="seconds"))
@@ -126,7 +127,14 @@ class FtmoNotifierService:
         key = f"reminder:{event.occurrence_id}:{selected_offset}"
         if self.state.was_sent(key):
             return
-        self.telegram.send(format_restricted_reminder(event, self.settings.timezone, minutes_until))
+        self.telegram.send(
+            format_restricted_reminder(
+                event,
+                self.settings.timezone,
+                minutes_until,
+                language=self.settings.message_language,
+            )
+        )
         self.state.mark_sent(key, now.isoformat(timespec="seconds"))
         logger.info("Reminder sent event=%s offset=%s", event.stable_id, selected_offset)
 
@@ -140,7 +148,13 @@ class FtmoNotifierService:
         key = f"release:{event.occurrence_id}"
         if self.state.was_sent(key):
             return
-        self.telegram.send(format_release(event, self.settings.timezone))
+        self.telegram.send(
+            format_release(
+                event,
+                self.settings.timezone,
+                language=self.settings.message_language,
+            )
+        )
         self.state.mark_sent(key, now.isoformat(timespec="seconds"))
         logger.info("Release update sent event=%s", event.stable_id)
 

@@ -1,62 +1,68 @@
 # FTMO Calendar Telegram Notifier
 
-Lekka usługa w Pythonie, która pobiera kalendarz ekonomiczny FTMO i wysyła na Telegram:
+**English** | [Polski](README.pl.md)
 
-- codzienne podsumowanie wydarzeń P0/P1/P2,
-- specjalne przypomnienie każdego 13. dnia miesiąca: `Dziś 13! Nie graj niczego 🙂`,
-- przypomnienia 15 i 5 minut przed wydarzeniami z obostrzeniami FTMO,
-- wynik `actual` oraz godzinę zakończenia obostrzenia po publikacji.
+A lightweight Python service that fetches the FTMO economic calendar and sends Telegram notifications with:
 
-Domyślnie bot uwzględnia wyłącznie wydarzenia od poniedziałku do piątku,
-w godzinach 07:00–20:00 czasu ustawionego w `TIMEZONE` (obie granice włącznie).
-W weekend nie wysyła podsumowania, przypomnień ani komunikatu na 13. dzień miesiąca.
+- a daily P0/P1/P2 event summary,
+- a special warning on every 13th day of the month: `Today is the 13th! Do not trade anything 🙂`,
+- reminders 15 and 5 minutes before events restricted by FTMO,
+- the released `actual` value and the restriction end time after publication,
+- Telegram messages in Polish or English.
 
-## Podgląd powiadomienia
+By default, the bot includes events from Monday to Friday between 07:00 and 20:00
+in the configured `TIMEZONE`, inclusive. It sends no summary, reminder, release update,
+or 13th-day warning on weekends.
 
-Tak wygląda przykładowe dzienne podsumowanie w aplikacji Telegram:
+## Notification preview
+
+An example daily summary in Telegram:
 
 <p align="center">
-  <img src="docs/telegram-preview.png" alt="Przykładowe powiadomienie FTMO z priorytetami i godzinami obostrzeń w Telegramie" width="484">
+  <img src="docs/telegram-preview.png" alt="Example FTMO Telegram notification with priorities and restriction windows" width="484">
 </p>
 
-Usługa korzysta z publicznego endpointu JSON używanego przez stronę kalendarza FTMO. Nie wymaga Selenium, Playwrighta ani uruchamiania przeglądarki.
+The service uses the public JSON endpoint consumed by the FTMO calendar page. It does
+not require Selenium, Playwright, or a running browser.
 
-## Priorytety
+## Priorities
 
-| Priorytet | Znaczenie |
+| Priority | Meaning |
 | --- | --- |
-| P0 | wydarzenie z `restriction=true` |
+| P0 | event with `restriction=true` |
 | P1 | high impact |
 | P2 | medium impact |
 | P3 | low impact |
-| P4 | holiday lub nieznany typ |
+| P4 | holiday or unknown type |
 
-Obostrzenie P0 dotyczy FTMO Account Standard. Według zasad FTMO nie dotyczy Evaluation Process ani FTMO Account Swing. Zawsze sprawdź aktualne warunki swojego konta na stronie FTMO.
+The P0 restriction applies to FTMO Account Standard. According to FTMO rules, it does
+not apply to the Evaluation Process or FTMO Account Swing. Always confirm the current
+rules for your account directly with FTMO.
 
-## Wymagania
+## Requirements
 
-- Linux z systemd, np. Debian 12 lub Ubuntu 22.04/24.04,
-- Python 3.11 lub nowszy,
-- `git`, `python3-venv` i dostęp HTTPS do FTMO oraz Telegrama,
-- bot Telegram utworzony przez `@BotFather`,
-- identyfikator czatu Telegram.
+- Linux with systemd, such as Debian 12 or Ubuntu 22.04/24.04,
+- Python 3.11 or newer,
+- `git`, `python3-venv`, and HTTPS access to FTMO and Telegram,
+- a Telegram bot created through `@BotFather`,
+- a Telegram chat ID.
 
-## 1. Przygotowanie bota Telegram
+## 1. Prepare the Telegram bot
 
-1. W Telegramie otwórz rozmowę z `@BotFather`.
-2. Wykonaj `/newbot` i zachowaj otrzymany token.
-3. Napisz dowolną wiadomość do nowego bota.
-4. Odczytaj `chat_id`, np. otwierając:
+1. Open a conversation with `@BotFather` in Telegram.
+2. Run `/newbot` and save the token.
+3. Send any message to your new bot.
+4. Retrieve the `chat_id`, for example by opening:
 
    ```text
    https://api.telegram.org/bot<TOKEN>/getUpdates
    ```
 
-Token traktuj jak hasło. Nie zapisuj go w repozytorium ani w historii poleceń dostępnej dla innych użytkowników.
+Treat the token like a password. Do not commit it or expose it in shared shell history.
 
-## 2. Instalacja na Linuxie
+## 2. Install on Linux
 
-Poniższe polecenia wykonaj z konta posiadającego `sudo`:
+Run the following commands from an account with `sudo` access:
 
 ```bash
 sudo apt update
@@ -79,9 +85,9 @@ sudo install -d -m 0750 -o ftmo-notifier -g ftmo-notifier \
   /var/lib/ftmo-calendar-notifier
 ```
 
-## 3. Konfiguracja
+## 3. Configure
 
-Utwórz plik konfiguracyjny poza katalogiem repozytorium:
+Create a configuration file outside the repository:
 
 ```bash
 sudo install -m 0600 -o root -g root /dev/null \
@@ -89,12 +95,13 @@ sudo install -m 0600 -o root -g root /dev/null \
 sudo nano /etc/ftmo-calendar-notifier.env
 ```
 
-Minimalna konfiguracja:
+Minimal configuration:
 
 ```dotenv
-TELEGRAM_BOT_TOKEN=wklej_token_z_BotFather
-TELEGRAM_CHAT_ID=wklej_chat_id
+TELEGRAM_BOT_TOKEN=paste_the_BotFather_token
+TELEGRAM_CHAT_ID=paste_the_chat_id
 TIMEZONE=Europe/Warsaw
+MESSAGE_LANGUAGE=en
 SUMMARY_TIME=07:00
 EVENT_TIME_FROM=07:00
 EVENT_TIME_TO=20:00
@@ -109,12 +116,17 @@ SNAPSHOT_FILE=/var/lib/ftmo-calendar-notifier/latest.json
 REQUEST_TIMEOUT_SECONDS=20
 ```
 
-`SEND_SUMMARY_ON_START=true` powoduje wysłanie jednego zestawienia zaraz po pierwszym uruchomieniu. Deduplikacja w `state.json` zapobiega ponownemu wysłaniu tego samego podsumowania po restarcie.
+`MESSAGE_LANGUAGE` selects the Telegram message language. Supported values are `en`
+and `pl`. Economic event names remain exactly as returned by FTMO.
 
-`EVENT_TIME_FROM` i `EVENT_TIME_TO` określają dozwolone godziny wydarzeń w lokalnej
-strefie `TIMEZONE`. `EXCLUDE_WEEKENDS=true` wyłącza soboty i niedziele.
+`SEND_SUMMARY_ON_START=true` sends one summary immediately after the first startup.
+Deduplication in `state.json` prevents the same summary from being sent again after a
+restart.
 
-## 4. Uruchomienie jako usługa systemd
+`EVENT_TIME_FROM` and `EVENT_TIME_TO` define the allowed event times in the local
+`TIMEZONE`. `EXCLUDE_WEEKENDS=true` disables Saturdays and Sundays.
+
+## 4. Run as a systemd service
 
 ```bash
 sudo install -m 0644 \
@@ -125,16 +137,17 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now ftmo-calendar-bot.service
 ```
 
-Sprawdzenie działania:
+Check the service:
 
 ```bash
 systemctl status ftmo-calendar-bot.service --no-pager
 sudo journalctl -u ftmo-calendar-bot.service -n 50 --no-pager
 ```
 
-Po poprawnym uruchomieniu w logu pojawi się `Daily summary sent`, a na wskazanym czacie Telegram zostanie wysłane pierwsze zestawienie.
+After a successful startup, the log will contain `Daily summary sent`, and the first
+summary will appear in the configured Telegram chat.
 
-## Aktualizacja
+## Update
 
 ```bash
 sudo git -C /opt/ftmo-calendar-telegram-notifier pull --ff-only
@@ -144,23 +157,25 @@ sudo systemctl restart ftmo-calendar-bot.service
 sudo systemctl status ftmo-calendar-bot.service --no-pager
 ```
 
-## Testy
+## Tests
 
-Testy nie korzystają z prawdziwego tokenu Telegram:
+Tests never use a real Telegram token:
 
 ```bash
 cd /opt/ftmo-calendar-telegram-notifier
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-## Bezpieczeństwo i dane
+## Security and data
 
-- prawdziwy token i `chat_id` nie są częścią repozytorium,
-- `.env`, `env.txt`, snapshoty API, stan powiadomień i pliki Pythona są ignorowane przez Git,
-- jednostka systemd działa jako osobny użytkownik bez możliwości logowania,
-- `NoNewPrivileges`, `ProtectSystem`, `ProtectHome` i `PrivateTmp` ograniczają usługę,
-- plik `/etc/ftmo-calendar-notifier.env` powinien mieć uprawnienia `0600`.
+- real tokens and chat IDs are not part of the repository,
+- `.env`, `env.txt`, API snapshots, notification state, and Python cache files are ignored by Git,
+- the systemd unit runs as a dedicated user without login access,
+- `NoNewPrivileges`, `ProtectSystem`, `ProtectHome`, and `PrivateTmp` restrict the service,
+- `/etc/ftmo-calendar-notifier.env` should have `0600` permissions.
 
-## Ważna informacja
+## Disclaimer
 
-Projekt nie jest powiązany z FTMO ani Telegramem. Endpoint kalendarza nie jest udokumentowanym publicznym API dla integratorów i może zostać zmieniony. Powiadomienia są pomocą operacyjną, a nie gwarancją zgodności z regulaminem — przed handlem sprawdź aktualny kalendarz i zasady FTMO.
+This project is not affiliated with FTMO or Telegram. The calendar endpoint is not a
+documented public integration API and may change. Notifications are an operational aid,
+not a guarantee of compliance. Check the current FTMO calendar and rules before trading.

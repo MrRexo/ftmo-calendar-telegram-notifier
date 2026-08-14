@@ -36,6 +36,23 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(settings.event_time_from, time(7, 0))
             self.assertEqual(settings.event_time_to, time(20, 0))
             self.assertTrue(settings.exclude_weekends)
+            self.assertEqual(settings.message_language, "pl")
+
+    def test_message_language_can_be_english(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "env.txt"
+            path.write_text("BOT_TOKEN: secret\nMOJ_CHAT_ID: 12345\n", encoding="utf-8")
+            with patch.dict(os.environ, {"MESSAGE_LANGUAGE": "EN"}, clear=True):
+                settings = load_settings(path)
+            self.assertEqual(settings.message_language, "en")
+
+    def test_unknown_message_language_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "env.txt"
+            path.write_text("BOT_TOKEN: secret\nMOJ_CHAT_ID: 12345\n", encoding="utf-8")
+            with patch.dict(os.environ, {"MESSAGE_LANGUAGE": "de"}, clear=True):
+                with self.assertRaisesRegex(RuntimeError, "MESSAGE_LANGUAGE"):
+                    load_settings(path)
 
 
 class NotificationWindowTests(unittest.TestCase):
