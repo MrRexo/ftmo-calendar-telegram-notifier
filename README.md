@@ -11,6 +11,14 @@ Domyślnie bot uwzględnia wyłącznie wydarzenia od poniedziałku do piątku,
 w godzinach 07:00–20:00 czasu ustawionego w `TIMEZONE` (obie granice włącznie).
 W weekend nie wysyła podsumowania, przypomnień ani komunikatu na 13. dzień miesiąca.
 
+## Podgląd powiadomienia
+
+Tak wygląda przykładowe dzienne podsumowanie w aplikacji Telegram:
+
+<p align="center">
+  <img src="docs/telegram-preview.png" alt="Przykładowe powiadomienie FTMO z priorytetami i godzinami obostrzeń w Telegramie" width="484">
+</p>
+
 Usługa korzysta z publicznego endpointu JSON używanego przez stronę kalendarza FTMO. Nie wymaga Selenium, Playwrighta ani uruchamiania przeglądarki.
 
 ## Priorytety
