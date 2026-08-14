@@ -14,6 +14,9 @@ class Settings:
     api_url: str
     timezone: ZoneInfo
     summary_time: time
+    event_time_from: time
+    event_time_to: time
+    exclude_weekends: bool
     poll_seconds: int
     reminder_minutes: tuple[int, ...]
     summary_impacts: frozenset[str]
@@ -55,6 +58,10 @@ def load_settings(config_file: Path | None = None) -> Settings:
         for value in get("SUMMARY_IMPACTS", "high,medium").split(",")
         if value.strip()
     )
+    event_time_from = _parse_time(get("EVENT_TIME_FROM", "07:00"))
+    event_time_to = _parse_time(get("EVENT_TIME_TO", "20:00"))
+    if event_time_from > event_time_to:
+        raise RuntimeError("EVENT_TIME_FROM must not be later than EVENT_TIME_TO")
 
     return Settings(
         telegram_bot_token=token,
@@ -62,6 +69,9 @@ def load_settings(config_file: Path | None = None) -> Settings:
         api_url=get("FTMO_API_URL", "https://gw2.ftmo.com/public-api/v1/economic-calendar"),
         timezone=ZoneInfo(get("TIMEZONE", "Europe/Warsaw")),
         summary_time=_parse_time(get("SUMMARY_TIME", "07:00")),
+        event_time_from=event_time_from,
+        event_time_to=event_time_to,
+        exclude_weekends=_parse_bool(get("EXCLUDE_WEEKENDS", "true")),
         poll_seconds=max(60, int(get("POLL_SECONDS", "300"))),
         reminder_minutes=reminder_minutes,
         summary_impacts=summary_impacts,

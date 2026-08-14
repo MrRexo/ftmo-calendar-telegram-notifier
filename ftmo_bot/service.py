@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from ftmo_bot.client import FtmoCalendarClient, write_snapshot
 from ftmo_bot.config import Settings, load_settings
+from ftmo_bot.filters import is_event_in_notification_window
 from ftmo_bot.formatting import format_daily_summary, format_release, format_restricted_reminder
 from ftmo_bot.models import EconomicEvent
 from ftmo_bot.state import NotificationState
@@ -59,22 +60,51 @@ class FtmoNotifierService:
         local_now = (now or datetime.now(self.settings.timezone)).astimezone(self.settings.timezone)
         events, payload = self.calendar.fetch(local_now.date(), local_now.date() + timedelta(days=1))
         write_snapshot(self.settings.snapshot_file, payload)
-        today_events = [event for event in events if event.date.astimezone(self.settings.timezone).date() == local_now.date()]
+        eligible_events = [
+            event
+            for event in events
+            if is_event_in_notification_window(
+                event,
+                self.settings.timezone,
+                self.settings.event_time_from,
+                self.settings.event_time_to,
+                self.settings.exclude_weekends,
+            )
+        ]
+        today_events = [
+            event
+            for event in eligible_events
+            if event.date.astimezone(self.settings.timezone).date() == local_now.date()
+        ]
 
         if self._summary_is_due(local_now):
             key = f"summary:{local_now.date().isoformat()}"
-            self.telegram.send(format_daily_summary(today_events, self.settings.timezone, self.settings.summary_impacts))
+            self.telegram.send(
+                format_daily_summary(
+                    today_events,
+                    self.settings.timezone,
+                    self.settings.summary_impacts,
+                    summary_day=local_now.date(),
+                )
+            )
             self.state.mark_sent(key, local_now.isoformat(timespec="seconds"))
             logger.info("Daily summary sent for %s", local_now.date())
 
-        for event in events:
+        for event in eligible_events:
             if event.restriction:
                 self._send_due_reminder(event, local_now)
                 self._send_release_update(event, local_now)
 
-        logger.info("Cycle complete: %s events (%s today)", len(events), len(today_events))
+        logger.info(
+            "Cycle complete: %s events (%s eligible, %s today)",
+            len(events),
+            len(eligible_events),
+            len(today_events),
+        )
 
     def _summary_is_due(self, now: datetime) -> bool:
+        if self.settings.exclude_weekends and now.weekday() >= 5:
+            return False
         key = f"summary:{now.date().isoformat()}"
         if self.state.was_sent(key):
             return False

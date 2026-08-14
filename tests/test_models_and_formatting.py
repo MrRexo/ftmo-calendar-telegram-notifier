@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from ftmo_bot.formatting import format_daily_summary, split_telegram_message
@@ -40,6 +40,24 @@ class ModelAndFormattingTests(unittest.TestCase):
         self.assertIn("14:28–14:32", text)
         self.assertIn("P0", text)
         self.assertIn("FTMO Account Standard", text)
+
+    def test_summary_contains_special_notice_on_thirteenth(self) -> None:
+        text = format_daily_summary(
+            [],
+            TZ,
+            frozenset({"high", "medium"}),
+            summary_day=date(2026, 8, 13),
+        )
+        self.assertIn("🛑 Dziś 13! Nie graj niczego 🙂", text)
+
+    def test_summary_omits_special_notice_on_other_days(self) -> None:
+        text = format_daily_summary(
+            [event()],
+            TZ,
+            frozenset({"high", "medium"}),
+            summary_day=date(2026, 8, 12),
+        )
+        self.assertNotIn("Nie graj niczego", text)
 
     def test_long_messages_are_split(self) -> None:
         chunks = split_telegram_message(("abc\n" * 2000), limit=100)
