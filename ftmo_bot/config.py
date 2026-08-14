@@ -13,6 +13,7 @@ class Settings:
     telegram_chat_id: str
     api_url: str
     timezone: ZoneInfo
+    message_language: str
     summary_time: time
     event_time_from: time
     event_time_to: time
@@ -62,12 +63,16 @@ def load_settings(config_file: Path | None = None) -> Settings:
     event_time_to = _parse_time(get("EVENT_TIME_TO", "20:00"))
     if event_time_from > event_time_to:
         raise RuntimeError("EVENT_TIME_FROM must not be later than EVENT_TIME_TO")
+    message_language = get("MESSAGE_LANGUAGE", "pl").lower()
+    if message_language not in {"pl", "en"}:
+        raise RuntimeError("MESSAGE_LANGUAGE must be one of: en, pl")
 
     return Settings(
         telegram_bot_token=token,
         telegram_chat_id=chat_id,
         api_url=get("FTMO_API_URL", "https://gw2.ftmo.com/public-api/v1/economic-calendar"),
         timezone=ZoneInfo(get("TIMEZONE", "Europe/Warsaw")),
+        message_language=message_language,
         summary_time=_parse_time(get("SUMMARY_TIME", "07:00")),
         event_time_from=event_time_from,
         event_time_to=event_time_to,
