@@ -7,6 +7,10 @@ Lekka usługa w Pythonie, która pobiera kalendarz ekonomiczny FTMO i wysyła na
 - przypomnienia 15 i 5 minut przed wydarzeniami z obostrzeniami FTMO,
 - wynik `actual` oraz godzinę zakończenia obostrzenia po publikacji.
 
+Domyślnie bot uwzględnia wyłącznie wydarzenia od poniedziałku do piątku,
+w godzinach 07:00–20:00 czasu ustawionego w `TIMEZONE` (obie granice włącznie).
+W weekend nie wysyła podsumowania, przypomnień ani komunikatu na 13. dzień miesiąca.
+
 Usługa korzysta z publicznego endpointu JSON używanego przez stronę kalendarza FTMO. Nie wymaga Selenium, Playwrighta ani uruchamiania przeglądarki.
 
 ## Priorytety
@@ -84,6 +88,9 @@ TELEGRAM_BOT_TOKEN=wklej_token_z_BotFather
 TELEGRAM_CHAT_ID=wklej_chat_id
 TIMEZONE=Europe/Warsaw
 SUMMARY_TIME=07:00
+EVENT_TIME_FROM=07:00
+EVENT_TIME_TO=20:00
+EXCLUDE_WEEKENDS=true
 POLL_SECONDS=300
 REMINDER_MINUTES=15,5
 SUMMARY_IMPACTS=high,medium
@@ -95,6 +102,9 @@ REQUEST_TIMEOUT_SECONDS=20
 ```
 
 `SEND_SUMMARY_ON_START=true` powoduje wysłanie jednego zestawienia zaraz po pierwszym uruchomieniu. Deduplikacja w `state.json` zapobiega ponownemu wysłaniu tego samego podsumowania po restarcie.
+
+`EVENT_TIME_FROM` i `EVENT_TIME_TO` określają dozwolone godziny wydarzeń w lokalnej
+strefie `TIMEZONE`. `EXCLUDE_WEEKENDS=true` wyłącza soboty i niedziele.
 
 ## 4. Uruchomienie jako usługa systemd
 
